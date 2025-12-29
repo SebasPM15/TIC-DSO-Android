@@ -18,6 +18,7 @@ import okhttp3.MediaType.Companion.toMediaTypeOrNull
 import okhttp3.MultipartBody
 import okhttp3.RequestBody.Companion.toRequestBody
 import java.io.ByteArrayOutputStream
+import com.mateopilco.ticdso.util.Benchmarker // <--- IMPORTANTE
 
 class DepthRepositoryImpl : DepthRepository {
 
@@ -86,6 +87,9 @@ class DepthRepositoryImpl : DepthRepository {
      * Recibe la imagen para enviar al servidor y la pose para pasarla al resultado.
      */
     private suspend fun performPrediction(image: Bitmap, pose: CameraPose): Result<DepthData> {
+        // === INICIO MEDICIÓN RED ===
+        Benchmarker.startFrame()
+
         return try {
             // 1. Optimización de imagen
             val scaledBitmap = Bitmap.createScaledBitmap(image, 640, 480, true)
@@ -96,8 +100,15 @@ class DepthRepositoryImpl : DepthRepository {
             val requestBody = byteArray.toRequestBody("image/jpeg".toMediaTypeOrNull())
             val body = MultipartBody.Part.createFormData("image", "frame.jpg", requestBody)
 
+            // --- Fase de RED (Latencia Pura) ---
+            // Aquí empieza realmente la comunicación
+            Benchmarker.startNetwork()
+
             // 2. Llamada al Servidor
             val response = api.predictDepth(body)
+
+            // === FIN MEDICIÓN RED ===
+            Benchmarker.endNetwork()   // <--- AÑADIR
 
             // 3. Mapeo de respuesta
             if (response.status == "success") {

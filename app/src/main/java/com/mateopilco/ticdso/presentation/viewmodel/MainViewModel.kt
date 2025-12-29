@@ -26,6 +26,7 @@ import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
+import com.mateopilco.ticdso.util.Benchmarker // <--- IMPORTANTE
 
 class MainViewModel(
     private val repository: DepthRepository = DepthRepositoryImpl()
@@ -126,6 +127,9 @@ class MainViewModel(
 
                         val currentIntrinsics = _uiState.value.intrinsics
 
+                        // === INICIO MEDICIÓN 3D ===
+                        Benchmarker.start3DProcessing() // <--- AÑADIR
+
                         // === LÓGICA DE MAPEO ESTILO PANGOLIN ===
                         val pointsToRender = withContext(Dispatchers.Default) {
                             if (depthData.depthBitmap != null && depthData.originalBitmap != null) {
@@ -197,6 +201,9 @@ class MainViewModel(
                                 cameraTrajectory = ArrayList(cameraTrajectory) // Copia para evitar concurrencia
                             )
                         }
+
+                        // === FIN MEDICIÓN GLOBAL ===
+                        Benchmarker.endFrame() // <--- AÑADIR
                     }.onFailure { error ->
                         _uiState.update {
                             it.copy(captureState = CaptureState.Error(error.message ?: "Error"))
