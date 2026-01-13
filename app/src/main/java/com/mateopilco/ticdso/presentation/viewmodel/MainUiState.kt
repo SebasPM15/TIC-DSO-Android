@@ -8,40 +8,49 @@ import com.mateopilco.ticdso.util.CameraPose
 import com.mateopilco.ticdso.util.Point3D
 
 /**
- * Parámetros intrínsecos de la cámara.
- * Valores relativos (0.0-1.0) que se escalan según las dimensiones de la imagen.
+ * Estado inmutable de la UI principal.
+ *
+ * Sigue el patrón UDF (Unidirectional Data Flow):
+ * - La UI solo lee este estado
+ * - Solo el ViewModel puede modificarlo
  */
-data class CameraIntrinsics(
-    val fxRel: Float = 0.5f,  // Focal X relativa
-    val fyRel: Float = 0.5f,  // Focal Y relativa
-    val cxRel: Float = 0.5f,  // Centro X relativo
-    val cyRel: Float = 0.5f,  // Centro Y relativo
-    val isCalibrated: Boolean = false
+data class MainUiState(
+    // === CONFIGURACIÓN ===
+    val config: AppConfig = AppConfig(),
+
+    // === ESTADOS DE CONEXIÓN ===
+    val connectionState: ConnectionState = ConnectionState.Disconnected,
+
+    // === ESTADOS DE CAPTURA ===
+    val currentMode: ImageSourceMode = ImageSourceMode.NONE,
+    val captureState: CaptureState = CaptureState.Idle,
+
+    // === DATOS 3D ===
+    val pointCloud: List<Point3D> = emptyList(),
+    val cameraTrajectory: List<CameraPose> = emptyList(),
+
+    // === CALIBRACIÓN ===
+    val intrinsics: CameraIntrinsics = CameraIntrinsics(),
+
+    // === MÉTRICAS ===
+    val fps: Float = 0f,
+    val totalKeyframes: Int = 0,
+    val totalPoints: Int = 0
 )
 
 /**
- * Estado inmutable de la UI principal.
- * Contiene toda la información necesaria para renderizar la escena 3D estilo Pangolin.
+ * Parámetros intrínsecos de la cámara.
+ *
+ * Siguiendo el modelo Pinhole Camera:
+ * - fx, fy: Distancias focales (en píxeles)
+ * - cx, cy: Centro óptico (punto principal)
+ *
+ * Los valores relativos (*Rel) son proporciones respecto al tamaño de la imagen.
  */
-data class MainUiState(
-    // Configuración del sistema
-    val config: AppConfig = AppConfig(),
-    val intrinsics: CameraIntrinsics = CameraIntrinsics(),
-
-    // Estados de conexión y captura
-    val connectionState: ConnectionState = ConnectionState.Disconnected,
-    val captureState: CaptureState = CaptureState.Idle,
-
-    // Modo de entrada actual
-    val currentMode: ImageSourceMode = ImageSourceMode.NONE,
-
-    // Datos de visualización 3D (Estilo Pangolin)
-    val pointCloud: List<Point3D> = emptyList(),
-    val cameraTrajectory: List<CameraPose> = emptyList(), // NUEVO: Trayectoria de la cámara
-
-    // Métricas de rendimiento
-    val fps: Float = 0f,
-
-    // Mensajes de error (opcional)
-    val errorMessage: String? = null
+data class CameraIntrinsics(
+    val fxRel: Float = 0.5f,      // fx / width
+    val fyRel: Float = 0.5f,      // fy / height
+    val cxRel: Float = 0.5f,      // cx / width
+    val cyRel: Float = 0.5f,      // cy / height
+    val isCalibrated: Boolean = false  // true si se leyó de camera.txt
 )
